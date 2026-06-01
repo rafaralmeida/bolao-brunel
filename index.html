@@ -185,10 +185,9 @@ main{max-width:920px;margin:0 auto;padding:18px 12px 80px}
 
 <script type="module">
 import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs }
+import { getFirestore, doc, getDoc, setDoc, onSnapshot }
                                 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ── FIREBASE CONFIG ───────────────────────────────────────────
 const app = initializeApp({
   apiKey:            "AIzaSyCW80kGSWMsCXJw8rrFdHkwGIcFgezqP8w",
   authDomain:        "bolao-brunel.firebaseapp.com",
@@ -199,24 +198,20 @@ const app = initializeApp({
 });
 const db = getFirestore(app);
 
-// Firestore helpers — todos os docs ficam em /bolao/{key}
 async function fsGet(key) {
-  try {
-    const s = await getDoc(doc(db,'bolao',key));
-    return s.exists() ? s.data().v : null;
-  } catch(e) { console.error('fsGet',key,e); return null; }
+  try { const s=await getDoc(doc(db,'bolao',key)); return s.exists()?s.data().v:null; }
+  catch(e){ console.error('fsGet',key,e); return null; }
 }
-async function fsSet(key, val) {
-  try { await setDoc(doc(db,'bolao',key), {v: val}); return true; }
-  catch(e) { console.error('fsSet',key,e); return false; }
+async function fsSet(key,val) {
+  try { await setDoc(doc(db,'bolao',key),{v:val}); return true; }
+  catch(e){ console.error('fsSet',key,e); return false; }
 }
-function fsListen(key, cb) {
-  return onSnapshot(doc(db,'bolao',key), s => { if(s.exists()) cb(s.data().v); });
+function fsListen(key,cb){
+  return onSnapshot(doc(db,'bolao',key),s=>{ if(s.exists()) cb(s.data().v); });
 }
 
-// ── DADOS DO BOLÃO ────────────────────────────────────────────
+// ── CONFIG ────────────────────────────────────────────────────
 const ADMIN_PASS = '121212';
-
 const DEFAULT_PARTS = [
   'Allan','Amanda C','Amanda D','Ana Paula','Bia','Bruno','Capezzutti',
   'Carol','Cris','Daniel D','Daniel F','Erika','Guilherme','Ingrid','Trotte',
@@ -240,105 +235,154 @@ const GT = {
   L:['Inglaterra','Croácia','Gana','Panamá'],
 };
 
-const GD = {
-  A:['2026-06-11','2026-06-12','2026-06-16','2026-06-16','2026-06-20','2026-06-20'],
-  B:['2026-06-13','2026-06-13','2026-06-17','2026-06-17','2026-06-21','2026-06-21'],
-  C:['2026-06-13','2026-06-14','2026-06-18','2026-06-18','2026-06-22','2026-06-22'],
-  D:['2026-06-14','2026-06-14','2026-06-18','2026-06-19','2026-06-23','2026-06-23'],
-  E:['2026-06-15','2026-06-15','2026-06-19','2026-06-19','2026-06-23','2026-06-23'],
-  F:['2026-06-15','2026-06-16','2026-06-20','2026-06-20','2026-06-24','2026-06-24'],
-  G:['2026-06-16','2026-06-17','2026-06-21','2026-06-21','2026-06-25','2026-06-25'],
-  H:['2026-06-17','2026-06-17','2026-06-21','2026-06-22','2026-06-26','2026-06-26'],
-  I:['2026-06-18','2026-06-18','2026-06-22','2026-06-22','2026-06-26','2026-06-26'],
-  J:['2026-06-19','2026-06-19','2026-06-23','2026-06-23','2026-06-27','2026-06-27'],
-  K:['2026-06-19','2026-06-20','2026-06-24','2026-06-24','2026-06-28','2026-06-28'],
-  L:['2026-06-20','2026-06-20','2026-06-25','2026-06-25','2026-06-29','2026-06-29'],
-};
-const GH = ['21:00','15:00','18:00','21:00','20:00','20:00'];
+// GAMES — cada jogo com data e hora oficial (horário de Brasília)
+// Ordem: [T0xT1, T2xT3, T0xT2, T1xT3, T0xT3, T1xT2]
+// onde T0=times[0], T1=times[1], T2=times[2], T3=times[3]
+const GAMES = [
+  // GRUPO A: México(0) · África do Sul(1) · Coreia do Sul(2) · Rep. Tcheca(3)
+  {id:1,  g:'A', a:'México',          b:'África do Sul',      date:'2026-06-11', t:'16:00'},
+  {id:2,  g:'A', a:'Coreia do Sul',   b:'Rep. Tcheca',        date:'2026-06-11', t:'23:00'},
+  {id:3,  g:'A', a:'México',          b:'Coreia do Sul',      date:'2026-06-18', t:'22:00'},
+  {id:4,  g:'A', a:'África do Sul',   b:'Rep. Tcheca',        date:'2026-06-18', t:'13:00'},
+  {id:5,  g:'A', a:'México',          b:'Rep. Tcheca',        date:'2026-06-24', t:'22:00'},
+  {id:6,  g:'A', a:'África do Sul',   b:'Coreia do Sul',      date:'2026-06-24', t:'22:00'},
+
+  // GRUPO B: Canadá(0) · Bósnia(1) · Qatar(2) · Suíça(3)
+  {id:7,  g:'B', a:'Canadá',          b:'Bósnia e Herzegovina',date:'2026-06-12', t:'16:00'},
+  {id:8,  g:'B', a:'Qatar',           b:'Suíça',              date:'2026-06-13', t:'16:00'},
+  {id:9,  g:'B', a:'Canadá',          b:'Qatar',              date:'2026-06-18', t:'19:00'},
+  {id:10, g:'B', a:'Suíça',           b:'Bósnia e Herzegovina',date:'2026-06-18', t:'16:00'},
+  {id:11, g:'B', a:'Suíça',           b:'Canadá',             date:'2026-06-24', t:'16:00'},
+  {id:12, g:'B', a:'Bósnia e Herzegovina',b:'Qatar',           date:'2026-06-24', t:'16:00'},
+
+  // GRUPO C: Brasil(0) · Marrocos(1) · Haiti(2) · Escócia(3)
+  {id:13, g:'C', a:'Brasil',          b:'Marrocos',           date:'2026-06-13', t:'19:00'},
+  {id:14, g:'C', a:'Haiti',           b:'Escócia',            date:'2026-06-13', t:'22:00'},
+  {id:15, g:'C', a:'Brasil',          b:'Haiti',              date:'2026-06-19', t:'22:00'},
+  {id:16, g:'C', a:'Escócia',         b:'Marrocos',           date:'2026-06-19', t:'19:00'},
+  {id:17, g:'C', a:'Escócia',         b:'Brasil',             date:'2026-06-24', t:'19:00'},
+  {id:18, g:'C', a:'Marrocos',        b:'Haiti',              date:'2026-06-24', t:'19:00'},
+
+  // GRUPO D: EUA(0) · Paraguai(1) · Austrália(2) · Turquia(3)
+  {id:19, g:'D', a:'EUA',             b:'Paraguai',           date:'2026-06-12', t:'22:00'},
+  {id:20, g:'D', a:'Austrália',       b:'Turquia',            date:'2026-06-13', t:'01:00'},
+  {id:21, g:'D', a:'EUA',             b:'Austrália',          date:'2026-06-19', t:'16:00'},
+  {id:22, g:'D', a:'Turquia',         b:'Paraguai',           date:'2026-06-19', t:'01:00'},
+  {id:23, g:'D', a:'Turquia',         b:'EUA',                date:'2026-06-25', t:'23:00'},
+  {id:24, g:'D', a:'Paraguai',        b:'Austrália',          date:'2026-06-25', t:'23:00'},
+
+  // GRUPO E: Alemanha(0) · Curaçao(1) · Costa do Marfim(2) · Equador(3)
+  {id:25, g:'E', a:'Alemanha',        b:'Curaçao',            date:'2026-06-14', t:'14:00'},
+  {id:26, g:'E', a:'Costa do Marfim', b:'Equador',            date:'2026-06-14', t:'20:00'},
+  {id:27, g:'E', a:'Alemanha',        b:'Costa do Marfim',    date:'2026-06-20', t:'17:00'},
+  {id:28, g:'E', a:'Equador',         b:'Curaçao',            date:'2026-06-20', t:'21:00'},
+  {id:29, g:'E', a:'Equador',         b:'Alemanha',           date:'2026-06-25', t:'17:00'},
+  {id:30, g:'E', a:'Curaçao',         b:'Costa do Marfim',    date:'2026-06-25', t:'17:00'},
+
+  // GRUPO F: Holanda(0) · Japão(1) · Suécia(2) · Tunísia(3)
+  {id:31, g:'F', a:'Holanda',         b:'Japão',              date:'2026-06-14', t:'17:00'},
+  {id:32, g:'F', a:'Suécia',          b:'Tunísia',            date:'2026-06-14', t:'23:00'},
+  {id:33, g:'F', a:'Tunísia',         b:'Japão',              date:'2026-06-21', t:'01:00'},
+  {id:34, g:'F', a:'Holanda',         b:'Suécia',             date:'2026-06-20', t:'14:00'},
+  {id:35, g:'F', a:'Tunísia',         b:'Holanda',            date:'2026-06-25', t:'20:00'},
+  {id:36, g:'F', a:'Japão',           b:'Suécia',             date:'2026-06-25', t:'20:00'},
+
+  // GRUPO G: Bélgica(0) · Egito(1) · Irã(2) · Nova Zelândia(3)
+  {id:37, g:'G', a:'Bélgica',         b:'Egito',              date:'2026-06-15', t:'16:00'},
+  {id:38, g:'G', a:'Irã',             b:'Nova Zelândia',      date:'2026-06-15', t:'22:00'},
+  {id:39, g:'G', a:'Nova Zelândia',   b:'Egito',              date:'2026-06-21', t:'22:00'},
+  {id:40, g:'G', a:'Bélgica',         b:'Irã',                date:'2026-06-21', t:'16:00'},
+  {id:41, g:'G', a:'Egito',           b:'Irã',                date:'2026-06-27', t:'00:00'},
+  {id:42, g:'G', a:'Nova Zelândia',   b:'Bélgica',            date:'2026-06-27', t:'00:00'},
+
+  // GRUPO H: Espanha(0) · Cabo Verde(1) · Arábia Saudita(2) · Uruguai(3)
+  {id:43, g:'H', a:'Espanha',         b:'Cabo Verde',         date:'2026-06-15', t:'13:00'},
+  {id:44, g:'H', a:'Arábia Saudita',  b:'Uruguai',            date:'2026-06-15', t:'19:00'},
+  {id:45, g:'H', a:'Espanha',         b:'Arábia Saudita',     date:'2026-06-21', t:'13:00'},
+  {id:46, g:'H', a:'Uruguai',         b:'Cabo Verde',         date:'2026-06-21', t:'19:00'},
+  {id:47, g:'H', a:'Uruguai',         b:'Espanha',            date:'2026-06-26', t:'21:00'},
+  {id:48, g:'H', a:'Cabo Verde',      b:'Arábia Saudita',     date:'2026-06-26', t:'21:00'},
+
+  // GRUPO I: França(0) · Senegal(1) · Iraque(2) · Noruega(3)
+  {id:49, g:'I', a:'França',          b:'Senegal',            date:'2026-06-16', t:'16:00'},
+  {id:50, g:'I', a:'Iraque',          b:'Noruega',            date:'2026-06-16', t:'19:00'},
+  {id:51, g:'I', a:'França',          b:'Iraque',             date:'2026-06-22', t:'18:00'},
+  {id:52, g:'I', a:'Noruega',         b:'Senegal',            date:'2026-06-22', t:'21:00'},
+  {id:53, g:'I', a:'Noruega',         b:'França',             date:'2026-06-26', t:'16:00'},
+  {id:54, g:'I', a:'Senegal',         b:'Iraque',             date:'2026-06-26', t:'16:00'},
+
+  // GRUPO J: Argentina(0) · Argélia(1) · Áustria(2) · Jordânia(3)
+  {id:55, g:'J', a:'Argentina',       b:'Argélia',            date:'2026-06-16', t:'14:00'},
+  {id:56, g:'J', a:'Áustria',         b:'Jordânia',           date:'2026-06-17', t:'01:00'},
+  {id:57, g:'J', a:'Argentina',       b:'Áustria',            date:'2026-06-22', t:'14:00'},
+  {id:58, g:'J', a:'Jordânia',        b:'Argélia',            date:'2026-06-23', t:'00:00'},
+  {id:59, g:'J', a:'Jordânia',        b:'Argentina',          date:'2026-06-27', t:'23:00'},
+  {id:60, g:'J', a:'Argélia',         b:'Áustria',            date:'2026-06-27', t:'23:00'},
+
+  // GRUPO K: Portugal(0) · Congo(1) · Uzbequistão(2) · Colômbia(3)
+  {id:61, g:'K', a:'Portugal',        b:'Congo',              date:'2026-06-17', t:'14:00'},
+  {id:62, g:'K', a:'Uzbequistão',     b:'Colômbia',           date:'2026-06-17', t:'23:00'},
+  {id:63, g:'K', a:'Portugal',        b:'Uzbequistão',        date:'2026-06-23', t:'14:00'},
+  {id:64, g:'K', a:'Colômbia',        b:'Congo',              date:'2026-06-23', t:'23:00'},
+  {id:65, g:'K', a:'Colômbia',        b:'Portugal',           date:'2026-06-27', t:'20:30'},
+  {id:66, g:'K', a:'Congo',           b:'Uzbequistão',        date:'2026-06-27', t:'20:30'},
+
+  // GRUPO L: Inglaterra(0) · Croácia(1) · Gana(2) · Panamá(3)
+  {id:67, g:'L', a:'Inglaterra',      b:'Croácia',            date:'2026-06-17', t:'17:00'},
+  {id:68, g:'L', a:'Gana',            b:'Panamá',             date:'2026-06-17', t:'20:00'},
+  {id:69, g:'L', a:'Inglaterra',      b:'Gana',               date:'2026-06-23', t:'17:00'},
+  {id:70, g:'L', a:'Panamá',          b:'Croácia',            date:'2026-06-23', t:'20:00'},
+  {id:71, g:'L', a:'Panamá',          b:'Inglaterra',         date:'2026-06-27', t:'18:00'},
+  {id:72, g:'L', a:'Croácia',         b:'Gana',               date:'2026-06-27', t:'18:00'},
+];
+
 const GC = {A:'#D0021B',B:'#1A4BA8',C:'#007E76',D:'#6B21A8',E:'#B45309',F:'#0369A1',G:'#047857',H:'#7C3AED',I:'#BE185D',J:'#0F766E',K:'#9A3412',L:'#1D4ED8'};
 const GS = 'ABCDEFGHIJKL'.split('');
 
-// Round-robin: 6 jogos por grupo (pares dos 4 times)
-const PAIRS = [[0,1],[2,3],[0,2],[1,3],[0,3],[1,2]];
-const GAMES = [];
-let gid = 1;
-GS.forEach(g => {
-  PAIRS.forEach(([i,j], idx) => {
-    GAMES.push({id:gid++, g, a:GT[g][i], b:GT[g][j], date:GD[g][idx], t:GH[idx]});
-  });
-});
-
-// ── PONTUAÇÃO ─────────────────────────────────────────────────
 function pts(pa,pb,ra,rb){
   if(pa===''||pa==null||pb===''||pb==null) return null;
   if(ra===''||ra==null||rb===''||rb==null) return null;
   pa=+pa; pb=+pb; ra=+ra; rb=+rb;
-  if(pa===ra && pb===rb) return 5;
-  const rw=ra>rb?1:ra<rb?-1:0, pw=pa>pb?1:pa<pb?-1:0;
-  return pw===rw ? 3 : 0;
+  if(pa===ra&&pb===rb) return 5;
+  const rw=ra>rb?1:ra<rb?-1:0,pw=pa>pb?1:pa<pb?-1:0;
+  return pw===rw?3:0;
 }
-
-// ── UTILS ─────────────────────────────────────────────────────
 function fmtD(d,t){ const dt=new Date(d+'T'+t+':00'); return dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})+' '+t; }
 function locked(d){ const n=new Date(); n.setHours(0,0,0,0); return n>=new Date(d+'T00:00:00'); }
-function encKey(n){ return n.replace(/[^a-zA-Z0-9_\-]/g, c => '_'+c.charCodeAt(0)+'_'); }
+function encKey(n){ return n.replace(/[^a-zA-Z0-9_\-]/g,c=>'_'+c.charCodeAt(0)+'_'); }
 function esc(s){ return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 function hideLo(){ document.getElementById('lo').classList.add('hide'); }
 function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 function setBadge(st,tx){ const e=document.getElementById('sbd'); if(e){ e.className='sbd '+st; e.textContent=tx; } }
 
-// ── STATE ─────────────────────────────────────────────────────
-let PARTS=[...DEFAULT_PARTS], me=null, isAdm=false;
-let tab='pal', grp='A', dirty=false, edU=null, edG='A';
-let _senhas={}, _pals={}, _res={};
-let _unsubs=[];
+let PARTS=[...DEFAULT_PARTS],me=null,isAdm=false;
+let tab='pal',grp='A',dirty=false,edU=null,edG='A';
+let _senhas={},_pals={},_res={},_unsubs=[];
 
-// ── INIT ──────────────────────────────────────────────────────
 (async function init(){
   document.getElementById('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
   document.getElementById('sc2').addEventListener('keydown',e=>{if(e.key==='Enter')doSenha();});
-
   setBadge('sy','⟳ conectando');
-  try {
-    // Carrega dados iniciais em paralelo
-    const [partsVal, senhasVal, palsVal, resVal] = await Promise.all([
-      fsGet('parts'), fsGet('senhas'), fsGet('pals'), fsGet('res')
-    ]);
-    PARTS  = (partsVal && partsVal.length) ? partsVal : DEFAULT_PARTS.slice();
-    _senhas = senhasVal || {};
-    _pals   = palsVal   || {};
-    _res    = resVal    || {};
-
-    // Se Firebase vazio, sobe lista padrão
-    if(!partsVal || !partsVal.length) await fsSet('parts', PARTS);
-
+  try{
+    const [pv,sv,palsv,rv]=await Promise.all([fsGet('parts'),fsGet('senhas'),fsGet('pals'),fsGet('res')]);
+    PARTS=(pv&&pv.length)?pv:DEFAULT_PARTS.slice();
+    _senhas=sv||{}; _pals=palsv||{}; _res=rv||{};
+    if(!pv||!pv.length) await fsSet('parts',PARTS);
     setBadge('ok','● ao vivo');
-  } catch(e) {
-    console.error('Init error:', e);
-    setBadge('er','✗ sem conexão');
-    // Mesmo sem Firebase, mostra o app com dados locais
-    PARTS = DEFAULT_PARTS.slice();
-  }
-
-  edU = PARTS[0] || null;
-  buildSelects();
-  hideLo();
-
-  // Listeners em tempo real
-  _unsubs.push(fsListen('pals',  v=>{ _pals=v||{};   if(me&&!dirty) showTab(tab); }));
-  _unsubs.push(fsListen('res',   v=>{ _res=v||{};    if(me) showTab(tab); }));
-  _unsubs.push(fsListen('parts', v=>{ if(v&&v.length){ PARTS=v; buildSelects(); if(me) showTab(tab); } }));
+  }catch(e){ console.error(e); setBadge('er','✗ sem conexão'); PARTS=DEFAULT_PARTS.slice(); }
+  edU=PARTS[0]||null; buildSelects(); hideLo();
+  _unsubs.push(fsListen('pals', v=>{ _pals=v||{}; if(me&&!dirty) showTab(tab); }));
+  _unsubs.push(fsListen('res',  v=>{ _res=v||{};  if(me) showTab(tab); }));
+  _unsubs.push(fsListen('parts',v=>{ if(v&&v.length){ PARTS=v; buildSelects(); if(me) showTab(tab); } }));
   _unsubs.push(fsListen('senhas',v=>{ _senhas=v||{}; }));
-
-  // Restaura sessão
-  const u=sessionStorage.getItem('bu'), a=sessionStorage.getItem('ba');
-  if(u && (u==='ADMIN'||PARTS.includes(u))){ me=u; isAdm=(a==='1'); launch(); }
+  const u=sessionStorage.getItem('bu'),a=sessionStorage.getItem('ba');
+  if(u&&(u==='ADMIN'||PARTS.includes(u))){ me=u; isAdm=(a==='1'); launch(); }
   else showScreen('ls');
 })();
 
 function buildSelects(){
   ['lu','su'].forEach(id=>{
-    const sel=document.getElementById(id), cur=sel.value;
+    const sel=document.getElementById(id),cur=sel.value;
     sel.innerHTML='<option value="">Selecione…</option>';
     PARTS.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; sel.appendChild(o); });
     if(id==='lu'){ const o=document.createElement('option'); o.value='ADMIN'; o.textContent='ADMIN'; sel.appendChild(o); }
@@ -346,30 +390,25 @@ function buildSelects(){
   });
 }
 
-// ── AUTH ──────────────────────────────────────────────────────
 function doLogin(){
-  const u=document.getElementById('lu').value, p=document.getElementById('lp').value, e=document.getElementById('le');
+  const u=document.getElementById('lu').value,p=document.getElementById('lp').value,e=document.getElementById('le');
   e.textContent='';
   if(!u){ e.textContent='Selecione seu nome.'; return; }
   if(u==='ADMIN'){
     if(p!==ADMIN_PASS){ e.textContent='Senha incorreta.'; return; }
     me='ADMIN'; isAdm=true;
   } else {
-    const k=encKey(u), s=_senhas;
+    const k=encKey(u),s=_senhas;
     if(!s[k]&&!s[u]){ e.textContent='Defina sua senha em "Primeiro acesso".'; return; }
-    const enc=btoa(unescape(encodeURIComponent(p)));
-    if((s[k]||s[u])!==enc){ e.textContent='Senha incorreta.'; return; }
+    if((s[k]||s[u])!==btoa(unescape(encodeURIComponent(p)))){ e.textContent='Senha incorreta.'; return; }
     me=u; isAdm=false;
   }
-  sessionStorage.setItem('bu',me); sessionStorage.setItem('ba',isAdm?'1':'0');
-  launch();
+  sessionStorage.setItem('bu',me); sessionStorage.setItem('ba',isAdm?'1':'0'); launch();
 }
-
 function doLogout(){ me=null; isAdm=false; dirty=false; sessionStorage.clear(); document.getElementById('lp').value=''; showScreen('ls'); }
-
 async function doSenha(){
-  const u=document.getElementById('su').value, n=document.getElementById('sn').value,
-        c=document.getElementById('sc2').value, e=document.getElementById('se');
+  const u=document.getElementById('su').value,n=document.getElementById('sn').value,
+        c=document.getElementById('sc2').value,e=document.getElementById('se');
   e.textContent=''; e.style.color='';
   if(!u){ e.textContent='Selecione seu nome.'; return; }
   if(n.length<4){ e.textContent='Mínimo 4 caracteres.'; return; }
@@ -380,18 +419,14 @@ async function doSenha(){
   const ns={..._senhas}; ns[k]=btoa(unescape(encodeURIComponent(n)));
   const ok=await fsSet('senhas',ns);
   if(ok){ _senhas=ns; e.style.color='#34D399'; e.textContent='Senha criada! Redirecionando…'; setTimeout(()=>{e.textContent='';e.style.color='';showScreen('ls');},1400); }
-  else{ e.textContent='Erro ao salvar. Tente novamente.'; }
+  else e.textContent='Erro ao salvar. Tente novamente.';
 }
-
 function launch(){
   document.getElementById('hn').textContent=isAdm?'⚙ ADMIN':me;
   ['adm','edt','prt'].forEach(x=>document.getElementById('t-'+x).style.display=isAdm?'block':'none');
   document.getElementById('t-pal').style.display=isAdm?'none':'block';
-  showScreen('app');
-  showTab(isAdm?'adm':'pal');
+  showScreen('app'); showTab(isAdm?'adm':'pal');
 }
-
-// ── TABS ──────────────────────────────────────────────────────
 function showTab(t){
   tab=t;
   ['pal','rnk','adm','edt','prt'].forEach(x=>{ const b=document.getElementById('t-'+x); if(b) b.classList.toggle('act',x===t); });
@@ -403,9 +438,7 @@ function showTab(t){
   else renderAdm(m);
 }
 
-// ── PALPITES ──────────────────────────────────────────────────
 function myPals(){ const k=encKey(me); return _pals[k]||_pals[me]||{}; }
-
 function renderPal(el){
   const mp=myPals();
   let h=`<div class="pts-leg"><span><b style="color:#34D399">5pts</b> placar exato</span><span><b style="color:#60A5FA">3pts</b> vencedor/empate</span><span><b style="color:#374151">0pts</b> erro</span></div>
@@ -415,7 +448,7 @@ function renderPal(el){
   <div style="font-size:11px;color:var(--mi);margin-bottom:10px">${GT[grp].join(' · ')}</div>
   <table class="pt"><thead><tr><th class="l">Confronto</th><th>Data</th><th colspan="3">Palpite</th><th>Pts</th><th></th></tr></thead><tbody>`;
   GAMES.filter(gm=>gm.g===grp).forEach(gm=>{
-    const lk=locked(gm.date), pal=mp[gm.id]||{a:'',b:''}, r=_res[gm.id], p=r?pts(pal.a,pal.b,r.a,r.b):null;
+    const lk=locked(gm.date),pal=mp[gm.id]||{a:'',b:''},r=_res[gm.id],p=r?pts(pal.a,pal.b,r.a,r.b):null;
     const pc=p===5?'p5':p===3?'p3':'p0';
     h+=`<tr>
       <td style="text-align:left"><div class="tm">${gm.a}</div><div class="ts">${gm.b}</div></td>
@@ -433,33 +466,27 @@ function renderPal(el){
   h+=`<div style="text-align:right;color:var(--mi);font-size:11px;margin-top:-2px">Grupo ${grp}: <span style="font-size:20px;color:#60A5FA;font-weight:700;font-family:Georgia,serif">${tot} pts</span></div>`;
   el.innerHTML=h;
 }
-
 function swG(g){ if(dirty)savePal(); grp=g; renderPal(document.getElementById('mn')); }
 function mkD(){ dirty=true; document.getElementById('svb').classList.add('up'); }
-
 async function savePal(){
   const pairs=[];
   GAMES.filter(gm=>gm.g===grp).forEach(gm=>{
     if(locked(gm.date)) return;
-    const a=document.getElementById('p'+gm.id+'a')?.value??'', b=document.getElementById('p'+gm.id+'b')?.value??'';
+    const a=document.getElementById('p'+gm.id+'a')?.value??'',b=document.getElementById('p'+gm.id+'b')?.value??'';
     if(a!==''||b!=='') pairs.push({id:gm.id,a,b});
   });
   if(pairs.length){
     setBadge('sy','⟳ salvando');
-    const k=encKey(me);
-    const np={..._pals}; if(!np[k]) np[k]={};
+    const k=encKey(me),np={..._pals}; if(!np[k]) np[k]={};
     pairs.forEach(({id,a,b})=>{ np[k][id]={a,b}; });
-    const ok=await fsSet('pals',np);
-    _pals=np;
-    setBadge(ok?'ok':'er', ok?'✓ salvo':'✗ erro');
+    const ok=await fsSet('pals',np); _pals=np;
+    setBadge(ok?'ok':'er',ok?'✓ salvo':'✗ erro');
   }
   dirty=false; document.getElementById('svb').classList.remove('up');
   renderPal(document.getElementById('mn'));
 }
 
-// ── RANKING ───────────────────────────────────────────────────
 function getPalsFor(u){ const k=encKey(u); return _pals[k]||_pals[u]||{}; }
-
 function renderRnk(el){
   const sc=PARTS.map(u=>{ let t=0; GAMES.forEach(gm=>{ const p2=_res[gm.id]?pts(getPalsFor(u)[gm.id]?.a,getPalsFor(u)[gm.id]?.b,_res[gm.id].a,_res[gm.id].b):null; if(p2!==null)t+=p2; }); return{u,t}; }).sort((a,b)=>b.t-a.t);
   const md=['🥇','🥈','🥉'];
@@ -487,7 +514,6 @@ function renderRnk(el){
   h+=`</div>`; el.innerHTML=h;
 }
 
-// ── ADMIN — RESULTADOS ────────────────────────────────────────
 function renderAdm(el){
   let h=`<div class="al aw">⚠️ Admin — insira os resultados oficiais.</div><div class="stabs">`;
   GS.forEach(g=>{ const a=g===grp; h+=`<button class="st${a?' act':''}" onclick="swAdm('${g}')" style="${a?`background:${GC[g]};color:#fff;border-color:${GC[g]}`:''}">G ${g}</button>`; });
@@ -508,7 +534,7 @@ function renderAdm(el){
 }
 function swAdm(g){ grp=g; renderAdm(document.getElementById('mn')); }
 async function svRes(id){
-  const a=document.getElementById('r'+id+'a').value, b=document.getElementById('r'+id+'b').value;
+  const a=document.getElementById('r'+id+'a').value,b=document.getElementById('r'+id+'b').value;
   if(a===''||b==='') return;
   setBadge('sy','⟳');
   const nr={..._res}; nr[id]={a:+a,b:+b};
@@ -517,7 +543,6 @@ async function svRes(id){
   const oe=document.getElementById('ok'+id); if(oe){ oe.style.display='inline'; setTimeout(()=>{ oe.style.display='none'; },2000); }
 }
 
-// ── ADMIN — EDITAR PALPITES ───────────────────────────────────
 function renderEdt(el){
   if(!edU) edU=PARTS[0];
   const mp=getPalsFor(edU);
@@ -532,7 +557,7 @@ function renderEdt(el){
   h+=`</div><div class="ca"><div class="ct"><span class="gt gc-${edG}">GRUPO ${edG}</span> <span style="font-size:12px;font-weight:400;color:var(--mi)">— ${edU}</span></div>
   <table class="pt"><thead><tr><th class="l">Confronto</th><th>Data</th><th colspan="3">Palpite</th><th>Pts</th><th></th></tr></thead><tbody>`;
   GAMES.filter(gm=>gm.g===edG).forEach(gm=>{
-    const pal=mp[gm.id]||{a:'',b:''}, r=_res[gm.id], p2=r?pts(pal.a,pal.b,r.a,r.b):null, pc=p2===5?'p5':p2===3?'p3':'p0';
+    const pal=mp[gm.id]||{a:'',b:''},r=_res[gm.id],p2=r?pts(pal.a,pal.b,r.a,r.b):null,pc=p2===5?'p5':p2===3?'p3':'p0';
     h+=`<tr><td style="text-align:left"><div class="tm">${gm.a}</div><div class="ts">${gm.b}</div></td>
     <td class="dt">${fmtD(gm.date,gm.t)}</td>
     <td><input type="number" class="si" id="ep${gm.id}a" min="0" max="20" value="${pal.a??''}" style="border-color:#6B21A8"/></td>
@@ -551,9 +576,9 @@ function renderEdt(el){
 function setEdU(u){ edU=u; renderEdt(document.getElementById('mn')); }
 function setEdG(g){ edG=g; renderEdt(document.getElementById('mn')); }
 async function svEdP(id){
-  const a=document.getElementById('ep'+id+'a')?.value??'', b=document.getElementById('ep'+id+'b')?.value??'';
+  const a=document.getElementById('ep'+id+'a')?.value??'',b=document.getElementById('ep'+id+'b')?.value??'';
   setBadge('sy','⟳');
-  const k=encKey(edU), np={..._pals}; if(!np[k]) np[k]={};
+  const k=encKey(edU),np={..._pals}; if(!np[k]) np[k]={};
   np[k][id]={a,b};
   const ok=await fsSet('pals',np); _pals=np;
   setBadge(ok?'ok':'er',ok?'✓ salvo':'✗ erro');
@@ -562,9 +587,9 @@ async function svEdP(id){
 }
 async function svAllEdt(){
   setBadge('sy','⟳ salvando');
-  const k=encKey(edU), np={..._pals}; if(!np[k]) np[k]={};
+  const k=encKey(edU),np={..._pals}; if(!np[k]) np[k]={};
   GAMES.filter(gm=>gm.g===edG).forEach(gm=>{
-    const a=document.getElementById('ep'+gm.id+'a')?.value??'', b=document.getElementById('ep'+gm.id+'b')?.value??'';
+    const a=document.getElementById('ep'+gm.id+'a')?.value??'',b=document.getElementById('ep'+gm.id+'b')?.value??'';
     np[k][gm.id]={a,b};
   });
   const ok=await fsSet('pals',np); _pals=np;
@@ -572,12 +597,11 @@ async function svAllEdt(){
   renderEdt(document.getElementById('mn'));
 }
 
-// ── ADMIN — PARTICIPANTES ─────────────────────────────────────
 function renderPrt(el){
   let h=`<div class="al aw">👥 Gerencie participantes. Remover não apaga palpites já registrados.</div>
   <div class="ca"><div class="ct">Participantes Ativos <span style="font-size:13px;font-weight:400;color:var(--mi)">(${PARTS.length})</span></div>
   <div class="pmgr">`;
-  PARTS.forEach(u=>{ const k=encKey(u), temSenha=!!(_senhas[k]||_senhas[u]);
+  PARTS.forEach(u=>{ const k=encKey(u),temSenha=!!(_senhas[k]||_senhas[u]);
     h+=`<div class="pcard"><div>
       <div class="pcard-name">${u}</div>
       <div class="pcard-sub">${temSenha?'🔐 senha definida':'⏳ aguardando senha'}</div>
@@ -598,34 +622,26 @@ function renderPrt(el){
     <p>• Remover retira da lista ativa — palpites ficam no histórico.</p>
   </div></div>`; el.innerHTML=h;
 }
-
 async function addPart(){
-  const inp=document.getElementById('new-part'), msg=document.getElementById('part-msg');
-  const nome=inp.value.trim();
-  msg.style.color='#F87171';
+  const inp=document.getElementById('new-part'),msg=document.getElementById('part-msg');
+  const nome=inp.value.trim(); msg.style.color='#F87171';
   if(!nome){ msg.textContent='Digite um nome.'; return; }
   if(nome.toUpperCase()==='ADMIN'){ msg.textContent='Nome reservado.'; return; }
   if(PARTS.find(p=>p.toLowerCase()===nome.toLowerCase())){ msg.textContent=`"${nome}" já está na lista.`; return; }
-  PARTS.push(nome);
-  setBadge('sy','⟳');
-  const ok=await fsSet('parts',PARTS);
-  setBadge(ok?'ok':'er',ok?'✓ salvo':'✗ erro');
+  PARTS.push(nome); setBadge('sy','⟳');
+  const ok=await fsSet('parts',PARTS); setBadge(ok?'ok':'er',ok?'✓ salvo':'✗ erro');
   buildSelects(); if(!edU) edU=PARTS[0];
   inp.value=''; msg.style.color='#34D399'; msg.textContent=`"${nome}" adicionado!`;
   renderPrt(document.getElementById('mn'));
 }
-
 async function rmPart(u){
   if(!confirm(`Remover "${u}" do bolão?`)) return;
-  PARTS=PARTS.filter(p=>p!==u);
-  setBadge('sy','⟳');
-  const ok=await fsSet('parts',PARTS);
-  setBadge(ok?'ok':'er',ok?'✓ salvo':'✗ erro');
+  PARTS=PARTS.filter(p=>p!==u); setBadge('sy','⟳');
+  const ok=await fsSet('parts',PARTS); setBadge(ok?'ok':'er',ok?'✓ salvo':'✗ erro');
   buildSelects(); if(edU===u) edU=PARTS[0]||null;
   renderPrt(document.getElementById('mn'));
 }
 
-// ── GLOBAIS ───────────────────────────────────────────────────
 Object.assign(window,{
   doLogin,doLogout,doSenha,showSS(){showScreen('ss');},goL(){showScreen('ls');},
   showTab,savePal,swG,mkD,svRes,swAdm,setEdU,setEdG,svEdP,svAllEdt,addPart,rmPart
