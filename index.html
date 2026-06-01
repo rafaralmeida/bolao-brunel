@@ -348,7 +348,7 @@ function pts(pa,pb,ra,rb){
   return pw===rw?3:0;
 }
 function fmtD(d,t){ const dt=new Date(d+'T'+t+':00'); return dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})+' '+t; }
-function locked(d){ const n=new Date(); n.setHours(0,0,0,0); return n>=new Date(d+'T00:00:00'); }
+function locked(d){ const n=new Date(); return n>=new Date('2026-06-11T00:00:00'); }
 function encKey(n){ return n.replace(/[^a-zA-Z0-9_\-]/g,c=>'_'+c.charCodeAt(0)+'_'); }
 function esc(s){ return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 function hideLo(){ document.getElementById('lo').classList.add('hide'); }
